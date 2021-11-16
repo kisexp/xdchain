@@ -351,6 +351,7 @@ type topicSearchInfo struct {
 
 const maxSearchCount = 5
 
+// 是整个 p2p 部分的核心方法。它控制了节点发现机制的大部分逻辑内容，由一个大的 select 进行各种 case 的监控
 func (net *Network) loop() {
 	var (
 		refreshTimer       = time.NewTicker(autoRefreshInterval)
@@ -413,6 +414,7 @@ loop:
 			break loop
 
 		// Ingress packet handling.
+		// 处理收到的 udp 消息
 		case pkt := <-net.read:
 			//fmt.Println("read", pkt.ev)
 			log.Trace("<-net.read")
@@ -429,6 +431,7 @@ loop:
 			// TODO: persist state if n.state goes >= known, delete if it goes <= known
 
 		// State transition timeouts.
+		// 处理收到的 udp 消息
 		case timeout := <-net.timeout:
 			log.Trace("<-net.timeout")
 			if net.timeoutTimers[timeout] == nil {
@@ -447,6 +450,7 @@ loop:
 			}})
 
 		// Querying.
+		// 发送的 udp ping 消息超时未收到 pong 应答
 		case q := <-net.queryReq:
 			log.Trace("<-net.queryReq")
 			if !q.start(net) {
@@ -454,6 +458,7 @@ loop:
 			}
 
 		// Interacting with the table.
+		// 从table中查找距离某个target最近的n个节点
 		case f := <-net.tableOpReq:
 			log.Trace("<-net.tableOpReq")
 			f()
@@ -598,6 +603,8 @@ loop:
 			}
 
 		// Periodic / lookup-initiated bucket refresh.
+		// 操作table, 这个case主要是为了防止table被异步操作
+		// 计时器到点，刷新table里的url
 		case <-refreshTimer.C:
 			log.Trace("<-refreshTimer.C")
 			// TODO: ideally we would start the refresh timer after
@@ -881,6 +888,7 @@ func init() {
 			}
 			n.queryTimeouts = 0
 		},
+		// verifywait 的 handle 方法
 		handle: func(net *Network, n *Node, ev nodeEvent, pkt *ingressPacket) (*nodeState, error) {
 			switch ev {
 			case pingPacket:

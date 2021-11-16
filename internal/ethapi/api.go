@@ -1925,6 +1925,8 @@ func (args *SendTxArgs) toTransaction() *types.Transaction {
 
 // TODO: this submits a signed transaction, if it is a signed private transaction that should already be recorded in the tx.
 // SubmitTransaction is a helper function that submits tx to txPool and logs a message.
+// TODO：这会提交一个签名交易，如果它是一个签名的私人交易，应该已经记录在 tx 中。
+// SubmitTransaction 是一个辅助函数，用于将 tx 提交到 txPool 并记录一条消息。
 func SubmitTransaction(ctx context.Context, b Backend, tx *types.Transaction, privateFrom string, isRaw bool) (common.Hash, error) {
 	// If the transaction fee cap is already specified, ensure the
 	// fee of the given transaction is _reasonable_.
@@ -1992,6 +1994,8 @@ func SubmitTransaction(ctx context.Context, b Backend, tx *types.Transaction, pr
 
 // runSimulation runs a simulation of the given transaction.
 // It returns the EVM instance upon completion
+// runSimulation 运行给定事务的模拟。
+// 完成后返回 EVM 实例
 func runSimulation(ctx context.Context, b Backend, from common.Address, tx *types.Transaction) (*vm.EVM, error) {
 	defer func(start time.Time) {
 		log.Debug("Simulated Execution EVM call finished", "runtime", time.Since(start))
@@ -2015,6 +2019,8 @@ func runSimulation(ctx context.Context, b Backend, from common.Address, tx *type
 	ctx, cancel = context.WithTimeout(ctx, time.Second*5)
 	// Make sure the context is cancelled when the call has completed
 	// this makes sure resources are cleaned up.
+	// 确保在调用完成时取消上下文
+	// 这确保资源被清理。
 	defer func() { cancel() }()
 
 	// Get a new instance of the EVM.
@@ -2030,6 +2036,8 @@ func runSimulation(ctx context.Context, b Backend, from common.Address, tx *type
 
 	// Wait for the context to be done and cancel the evm. Even if the
 	// EVM has finished, cancelling may be done (repeatedly)
+	// 等待上下文完成并取消 evm。 即使
+	// EVM 已经完成，可以取消（重复）
 	go func() {
 		<-ctx.Done()
 		evm.Cancel()
@@ -2067,11 +2075,14 @@ func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args Sen
 	if args.Nonce == nil {
 		// Hold the addresse's mutex around signing to prevent concurrent assignment of
 		// the same nonce to multiple accounts.
+		// 在签名周围保留地址的互斥锁以防止并发分配
+		// 对多个帐户使用相同的随机数。
 		s.nonceLock.LockAddr(args.From)
 		defer s.nonceLock.UnlockAddr(args.From)
 	}
 
 	// Set some sanity defaults and terminate on failure
+	// 设置一些健全的默认值并在失败时终止
 	if err := args.setDefaults(ctx, s.b); err != nil {
 		return common.Hash{}, err
 	}
@@ -2716,6 +2727,7 @@ func (s *PublicBlockChainAPI) GetQuorumPayload(ctx context.Context, digestHex st
 
 // Quorum
 // for raw private transaction, privateTxArgs.privateFrom will be updated with value from Tessera when payload is retrieved
+// 对于原始私有交易，当检索到有效负载时，privateTxArgs.privateFrom 将使用来自 Tessera 的值进行更新
 func checkAndHandlePrivateTransaction(ctx context.Context, b Backend, tx *types.Transaction, privateTxArgs *PrivateTxArgs, from common.Address, txnType TransactionType) (isPrivate bool, replaceDataWithHash bool, hash common.EncryptedPayloadHash, err error) {
 	replaceDataWithHash = false
 	isPrivate = privateTxArgs != nil && privateTxArgs.PrivateFor != nil
@@ -2743,6 +2755,7 @@ func checkAndHandlePrivateTransaction(ctx context.Context, b Backend, tx *types.
 	}
 
 	// validate that PrivateFrom is one of the addresses of the private state resolved from the user context
+	// 验证 PrivateFrom 是从用户上下文解析的私有状态的地址之一
 	if b.ChainConfig().IsMPS {
 		var psm *mps.PrivateStateMetadata
 		psm, err = b.PSMR().ResolveForUserContext(ctx)

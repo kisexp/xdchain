@@ -311,6 +311,7 @@ func (t *udp) sendTopicNodes(remote *Node, queryHash common.Hash, nodes []*Node)
 	}
 }
 
+// 用于将消息通过 udp 发送给目标地址。
 func (t *udp) sendPacket(toid NodeID, toaddr *net.UDPAddr, ptype byte, req interface{}) (hash []byte, err error) {
 	//fmt.Println("sendPacket", nodeEvent(ptype), toaddr.String(), toid.String())
 	packet, hash, err := encodePacket(t.priv, ptype, req)
@@ -353,6 +354,7 @@ func encodePacket(priv *ecdsa.PrivateKey, ptype byte, req interface{}) (p, hash 
 
 // readLoop runs in its own goroutine. it injects ingress UDP packets
 // into the network loop.
+//用来监听所有收到的udp消息。通过 ReadFromUDP() 接收收到的消息，然后在 handlePacket() 方法内将消息序列化后传递给后续的消息处理程序。
 func (t *udp) readLoop() {
 	defer t.conn.Close()
 	// Discovery packets are defined to be no larger than 1280 bytes.
@@ -360,6 +362,7 @@ func (t *udp) readLoop() {
 	// as invalid because their hash won't match.
 	buf := make([]byte, 1280)
 	for {
+		// 接收收到的消息
 		nbytes, from, err := t.conn.ReadFromUDP(buf)
 		ingressTrafficMeter.Mark(int64(nbytes))
 		if netutil.IsTemporaryError(err) {
@@ -371,10 +374,12 @@ func (t *udp) readLoop() {
 			log.Debug(fmt.Sprintf("Read error: %v", err))
 			return
 		}
+		// 方法内将消息序列化后传递给后续的消息处理程序
 		t.handlePacket(from, buf[:nbytes])
 	}
 }
 
+// 方法内将消息序列化后传递给后续的消息处理程序
 func (t *udp) handlePacket(from *net.UDPAddr, buf []byte) error {
 	pkt := ingressPacket{remoteAddr: from}
 	if err := decodePacket(buf, &pkt); err != nil {

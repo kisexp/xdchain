@@ -62,8 +62,10 @@ func newUnconfirmedBlocks(chain chainRetriever, depth uint) *unconfirmedBlocks {
 }
 
 // Insert adds a new block to the set of unconfirmed ones.
+// Insert将新块添加到未确认的块集中。
 func (set *unconfirmedBlocks) Insert(index uint64, hash common.Hash) {
 	// If a new block was mined locally, shift out any old enough blocks
+	// 如果一个新区块在当地开采，则将所有足够老的区块移出
 	set.Shift(index)
 
 	// Create the new item as its own ring
@@ -82,6 +84,7 @@ func (set *unconfirmedBlocks) Insert(index uint64, hash common.Hash) {
 		set.blocks.Move(-1).Link(item)
 	}
 	// Display a log for the user to notify of a new mined block unconfirmed
+	//显示日志，以便用户通知未确认的新开采区块
 	log.Info("🔨 mined potential block", "number", index, "hash", hash)
 }
 

@@ -230,6 +230,7 @@ func newWorker(config *Config, chainConfig *params.ChainConfig, engine consensus
 		worker.chainHeadSub = eth.BlockChain().SubscribeChainHeadEvent(worker.chainHeadCh)
 		worker.chainSideSub = eth.BlockChain().SubscribeChainSideEvent(worker.chainSideCh)
 		// Sanitize recommit interval if the user-specified one is too short.
+		//如果用户指定的时间间隔太短，请清理重新提交时间间隔。
 		recommit := worker.config.Recommit
 		if recommit < minRecommitInterval {
 			log.Warn("Sanitizing miner recommit interval", "provided", recommit, "updated", minRecommitInterval)
@@ -476,6 +477,8 @@ func (w *worker) mainLoop() {
 			}
 			// If our mining block contains less than 2 uncle blocks,
 			// add the new uncle block if valid and regenerate a mining block.
+			// 如果我们的采矿区块少于2个区块，
+			// 添加新块（如果有效）并重新生成挖掘块。
 			if w.isRunning() && w.current != nil && w.current.uncles.Cardinality() < 2 {
 				start := time.Now()
 				if err := w.commitUncle(w.current, ev.Block.Header()); err == nil {
@@ -599,6 +602,8 @@ func (w *worker) taskLoop() {
 
 // resultLoop is a standalone goroutine to handle sealing result submitting
 // and flush relative data to the database.
+//resultLoop是一个独立的goroutine，用于处理密封结果提交
+//并将相关数据刷新到数据库。
 func (w *worker) resultLoop() {
 	for {
 		select {
@@ -715,9 +720,11 @@ func (w *worker) resultLoop() {
 				"elapsed", common.PrettyDuration(time.Since(task.createdAt)))
 
 			// Broadcast the block and announce chain insertion event
+			//广播区块并宣布链插入事件
 			w.mux.Post(core.NewMinedBlockEvent{Block: block})
 
 			// Insert the block into the set of pending ones to resultLoop for confirmations
+			//将块插入到resultLoop的挂起块集中进行确认
 			w.unconfirmed.Insert(block.NumberU64(), block.Hash())
 
 		case <-w.exitCh:
@@ -967,6 +974,7 @@ func (w *worker) commitTransactions(txs *types.TransactionsByPriceAndNonce, coin
 }
 
 // commitNewWork generates several new sealing tasks based on the parent block.
+// commitNewWork基于父块生成几个新的密封任务。
 func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
@@ -981,6 +989,7 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 	allowedFutureBlockTime := int64(w.config.AllowedFutureBlockTime) //Quorum - get AllowedFutureBlockTime to fix issue # 1004
 
 	// this will ensure we're not going off too far in the future
+	// 这将确保之后的区块不会超出最大时间
 	if now := time.Now().Unix(); timestamp > now+1+allowedFutureBlockTime {
 		wait := time.Duration(timestamp-now) * time.Second
 		log.Info("Mining too far in the future", "wait", common.PrettyDuration(wait))
@@ -1100,6 +1109,8 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 
 // commit runs any post-transaction state modifications, assembles the final block
 // and commits new work if consensus engine is running.
+//commit运行任何事务后状态修改，组装最后一个块
+//如果共识引擎正在运行，则提交新工作。
 func (w *worker) commit(uncles []*types.Header, interval func(), update bool, start time.Time) error {
 	// Deep copy receipts here to avoid interaction between different tasks.
 	receipts := copyReceipts(w.current.receipts)

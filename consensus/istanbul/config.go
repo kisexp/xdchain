@@ -106,11 +106,16 @@ func (p *ProposerPolicy) ClearRegistry() {
 }
 
 type Config struct {
+	// 每个IBFT或 QBFT回合的最小请求超时（以毫秒为单位）。请求超时是如果前一轮没有完成，IBFT 触发新一轮的超时时间。随着超时被更频繁地命中，此时间段会增加。
 	RequestTimeout         uint64          `toml:",omitempty"` // The timeout for each Istanbul round in milliseconds.
+	// 出块时间 (两个连续块的时间戳之间的默认最小差异（以秒为单位）)
 	BlockPeriod            uint64          `toml:",omitempty"` // Default minimum difference between two consecutive block's timestamps in second
 	ProposerPolicy         *ProposerPolicy `toml:",omitempty"` // The policy for proposer selection
+	// 检查点和重置未决投票之前的块数
 	Epoch                  uint64          `toml:",omitempty"` // The number of blocks after which to checkpoint and reset the pending votes
 	Ceil2Nby3Block         *big.Int        `toml:",omitempty"` // Number of confirmations required to move from one state to next [2F + 1 to Ceil(2N/3)]
+	// 在它们被认为是未来的块之前允许块的当前时间的最长时间（以秒为单位）
+	// 从当前时间开始，块被视为未来块之前允许的最长时间，以秒为单位。这允许节点稍微不同步而不会收到“未来挖掘太远”消息。默认值为 0。
 	AllowedFutureBlockTime uint64          `toml:",omitempty"` // Max time (in seconds) from current time allowed for blocks, before they're considered future blocks
 	TestQBFTBlock          *big.Int        `toml:",omitempty"` // Fork block at which block confirmations are done using qbft consensus instead of ibft
 }

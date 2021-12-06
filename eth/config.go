@@ -49,6 +49,7 @@ var DefaultLightGPOConfig = gasprice.Config{
 }
 
 // DefaultConfig contains default settings for use on the Ethereum main net.
+//DefaultConfig包含在以太坊主网络上使用的默认设置。
 var DefaultConfig = Config{
 	SyncMode: downloader.FastSync,
 	Ethash: ethash.Config{
